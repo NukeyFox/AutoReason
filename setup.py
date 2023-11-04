@@ -15,6 +15,7 @@ setup(
     url = "https://github.com/NukeyFox/AutoReason",
     packages=find_packages(),
     long_description=read('README.md'),
+    install_requires=[],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
