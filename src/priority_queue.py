@@ -1,5 +1,6 @@
 from __future__ import annotations 
-from typing import TypeVar, Iterable, Generic, Callable, Any, Self, Optional, Callable, List, Union
+from typing import TypeVar, Iterable, Generic, Callable, Any, Optional, Callable, List, Union
+from typing_extensions import Self
 from abc import ABC, abstractmethod
 T = TypeVar('T')
 
@@ -17,7 +18,7 @@ class PriorityQueueAbstract(Generic[T]):
         pass 
     
     @abstractmethod
-    def insert(self, item : T, priority : float | int ) -> None:
+    def insert(self, item : T, priority : float | int ) -> bool:
         pass 
     
     @abstractmethod
@@ -29,7 +30,7 @@ class PriorityQueueAbstract(Generic[T]):
         pass 
     
     @abstractmethod
-    def change_priority(self, item : T, new_priority : float | int) ->  None:
+    def change_priority(self, item : T, new_priority : float | int) ->  bool:
         pass 
     
     @abstractmethod
@@ -69,17 +70,18 @@ class FibonacciHeap(PriorityQueueAbstract[T]):
         self._min_priority : Optional[int | float] = None
         self._min : Optional[T] = None
         
-    def insert(self, item : T, priority : float | int) -> None:
+    def insert(self, item : T, priority : float | int) -> bool:
         if self._min_priority is None or priority < self._min_priority:
             self._min_priority = priority
             self._min = item 
-        
+    
         if item not in self._hash:
             node : FibNode[T] = FibNode(item, priority, set())
             self._hash[item] = node
             self._tree_list.append(node)
+            return True
         else:
-            self.change_priority(item, priority)
+            return self.change_priority(item, priority)
     
     def get_min(self) -> Optional[T]:
         return self._min
@@ -126,7 +128,7 @@ class FibonacciHeap(PriorityQueueAbstract[T]):
             else:
                 self._pop(parent)
 
-    def change_priority(self, item : T, new_priority : float) -> None:
+    def change_priority(self, item : T, new_priority : float) -> bool:
         if item not in self._hash:
             raise Exception("Item doesn't exist")
         node = self._hash[item]
@@ -135,6 +137,8 @@ class FibonacciHeap(PriorityQueueAbstract[T]):
         if self._min_priority is None or node._priority < self._min_priority:
                 self._min_priority = node._priority
                 self._min = node._val  
+                return True 
+        return False
     
     def empty(self) -> bool:
         return len(self._tree_list) == 0 
@@ -165,13 +169,14 @@ class PairingHeap(PriorityQueueAbstract[T]):
         self._hash : dict[T,PairNode[T]] = {}
         
 
-    def insert(self, item : T, priority : float | int ) -> None:
+    def insert(self, item : T, priority : float | int ) -> bool:
         if item not in self._hash:
              node = PairNode(item, priority, set())
              self._root = self._merge(node, self._root)
              self._hash[item] = node
+             return True
         else:
-            self.change_priority(item, priority)
+            return self.change_priority(item, priority)
        
     
     def get_min(self) -> Optional[T]:
@@ -216,17 +221,18 @@ class PairingHeap(PriorityQueueAbstract[T]):
             n1._parent = None
             return self._merge(self._merge(n0,n1), self._merge_pair(children))
     
-    def change_priority(self, item : T, new_priority : float | int) ->  None:
+    def change_priority(self, item : T, new_priority : float | int) ->  bool:
         node = self._hash[item]
         parent = node._parent
+        old_priority = node._priority
         node._priority = new_priority
-        parent._children.remove(node)
+        if parent is not None:
+            parent._children.remove(node)
         self._root = self._merge(node, self._root)
+        return old_priority > new_priority
             
-    
-    @abstractmethod
     def empty(self) -> bool:
-        return self.root is None
+        return self._root is None
     
     def __contains__(self, item : T) -> bool:
         return item in self._hash
