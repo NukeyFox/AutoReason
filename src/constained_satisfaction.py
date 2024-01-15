@@ -1,9 +1,13 @@
 from __future__ import annotations 
-from typing import TypeVar, Iterable, Mapping, Generic, Collection, Callable, FrozenSet, Any, Set, Dict, Optional, Callable, List, Union
+from typing import TypeVar, Generator, Mapping, Generic, Collection, Callable, FrozenSet, Any, Set, Dict, Optional, Callable, List, Union
 from typing_extensions import Self
 from collections.abc import Collection
 from abc import ABC, abstractmethod
+from enum import Enum
 from search import Searcher #type: ignore
+import timeit
+import tracemalloc
+
 T = TypeVar('T')
 U = TypeVar('U')
 State = FrozenSet[Dict[U,T]]
@@ -11,11 +15,35 @@ State = FrozenSet[Dict[U,T]]
 # Forward propagation
 # Arc consistency
 
-class NoSolutionError(Exception):
-    pass 
+class CSPGenerator(Generic[U,T]):
+    def __init__(self, variable : U,  domain : Collection[T]):
+        self.__variable = variable
+        self.__domain = domain
+        self.__dom = iter(domain)
+    
+    def __iter__(self):
+        return self.__dom
+    
+    def __next__(self):
+        return next(self.__dom, None)
 
+    def reset(self):
+        self.__dom = iter(self.__domain)
+
+    def empty_domain(self):
+        return len(self.__dom) == 0
+
+    def get_variable(self):
+        return self.__variable
+
+class Assign():
+    def __init__(self, var, val):
+        self.var = var 
+        self.val = val
 
 class ConstraintSolverBase(Generic[T,U]):
+
+
     def __init__(self, 
                 variables   : Collection[U],
                 domains     : Mapping[U, Collection[T]],
@@ -26,22 +54,49 @@ class ConstraintSolverBase(Generic[T,U]):
         self.count = len(variables)
        
     def find_solution(self) -> Dict[U,T] | None:
-        return self.backtrack({})   
+        return self.backtrack1({})   
 
-    def backtrack(self, assignment):
-            #Code copied from Geeks for Geeks: https://www.geeksforgeeks.org/constraint-satisfaction-problems-csp-in-artificial-intelligence/
+    def backtrack1(self, assignment): 
         if len(assignment) == len(self.variables): 
             return assignment 
+  
         var = self.select_unassigned_variable(assignment) 
         for value in self.order_domain_values(var, assignment): 
             if self.is_consistent(var, value, assignment): 
                 assignment[var] = value 
-                result = self.backtrack(assignment) 
+                result = self.backtrack1(assignment) 
                 if result is not None: 
                     return result 
                 del assignment[var] 
         return None
-       
+
+    def backtrack2(self, assignment):
+            #Code copied from Geeks for Geeks: https://www.geeksforgeeks.org/constraint-satisfaction-problems-csp-in-artificial-intelligence/
+        var_gen = {}
+        for v in self.variables:
+            var_gen[v] = iter(self.domains[v])
+        
+        actions_taken = []
+        
+        while len(assignment) != len(self.variables):
+            var = self.select_unassigned_variable(assignment) 
+            val = next(var_gen[var],None)
+
+            if val is None:
+                if not actions_taken:
+                    return None
+                last_action = actions_taken.pop()
+                del assignment[last_action]
+                var_gen[var] = iter(self.domains[var])
+                continue
+
+            if self.is_consistent(var, val, assignment): 
+                assignment[var] = val
+                actions_taken.append(var)
+
+
+        return assignment
+     
         
     def select_unassigned_variable(self, assignment : Dict[U,T]) -> U:
         unassigned_vars = [var for var in self.variables if var not in assignment] 
@@ -114,9 +169,22 @@ if __name__ == "__main__":
         Domains,
         consr
     )
-    sol = csp.find_solution()
-    solution = [[0 for i in range(9)] for i in range(9)] 
-    for i,j in sol: 
-        solution[i][j]=sol[i,j] 
-        
-    print_sudoku(solution)
+
+    
+    # displaying the memory
+    print(tracemalloc.get_traced_memory())
+    
+    # stopping the library
+    
+    tracemalloc.start()
+    time1 = timeit.timeit(lambda : csp.backtrack1({}), number = 5)
+    m1,m0 = tracemalloc.get_traced_memory()
+    print(m1-m0)
+    tracemalloc.stop()
+    tracemalloc.start()
+    time2 = timeit.timeit(lambda : csp.backtrack2({}), number = 5)
+    m1,m0 = tracemalloc.get_traced_memory()
+    print(m1-m0)
+    tracemalloc.stop()
+    print("Time 1: ",time1)
+    print("Time 2: ",time2)
