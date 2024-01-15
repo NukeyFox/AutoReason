@@ -32,7 +32,6 @@ class ConstraintSolverBase(Generic[T,U]):
             #Code copied from Geeks for Geeks: https://www.geeksforgeeks.org/constraint-satisfaction-problems-csp-in-artificial-intelligence/
         if len(assignment) == len(self.variables): 
             return assignment 
-
         var = self.select_unassigned_variable(assignment) 
         for value in self.order_domain_values(var, assignment): 
             if self.is_consistent(var, value, assignment): 
@@ -108,11 +107,16 @@ if __name__ == "__main__":
         for j in range(9): 
             add_constraint((i, j))
     def consr(p1, v1, p2, v2):
-        return (not p2 in constraints[p1]) and (v1 != v2)
-
+        return (p1 == p2) or (p2 in constraints[p1] and (v1 != v2)) or (p2 not in constraints[p1])
+    
     csp = ConstraintSolverBase(
         variables,
         Domains,
         consr
     )
-    print(csp.find_solution())
+    sol = csp.find_solution()
+    solution = [[0 for i in range(9)] for i in range(9)] 
+    for i,j in sol: 
+        solution[i][j]=sol[i,j] 
+        
+    print_sudoku(solution)
