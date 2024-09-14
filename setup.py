@@ -26,8 +26,8 @@ setup(
     url = "https://github.com/NukeyFox/AutoReason",
     packages=find_packages(),
     long_description=read('README.md'),
-    setup_requires=["pybind11"],
-    install_requires=["pybind11"],
+    setup_requires=[],
+    install_requires=["lark"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
