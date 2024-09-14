@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/local/python/3.12.1/lib/python3.12/**",
+                "/home/codespace/.local/lib/python3.12/site-packages/**",
+                "/usr/local/python/3.12.1/lib/python3.12/site-packages/**",
+                "/usr/local/python/3.12.1/lib/python3.12/lib-dynload/**",
+                "/usr/local/python/3.12.1/lib/python3.12/site-packages/pybind11/include/**",
+                "/usr/include/python3.8/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}
